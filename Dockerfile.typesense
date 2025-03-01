@@ -1,0 +1,12 @@
+# Use the official TypeSense image
+FROM typesense/typesense:28.0
+
+# Set environment variables
+ENV TYPESENSE_API_KEY=my_secure_api_key
+ENV TYPESENSE_DATA_DIR=/data
+
+# Expose TypeSense port
+EXPOSE 8108
+
+# Default command
+CMD ["typesense", "--data-dir", "/data", "--api-key", "my_secure_api_key"]

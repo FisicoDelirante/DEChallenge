@@ -1,0 +1,13 @@
+# Use the official PostgreSQL image
+FROM postgres
+
+# Set environment variables
+ENV POSTGRES_USER=fer
+ENV POSTGRES_PASSWORD=pwc
+ENV POSTGRES_DB=dechallenge
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Default command
+CMD ["postgres"]
