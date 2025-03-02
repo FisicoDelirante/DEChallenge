@@ -11,7 +11,8 @@ dependencies = [
     "fastapi[standard] (>=0.115.10,<0.116.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
     "sqlalchemy (>=2.0.38,<3.0.0)",
-    "alembic (>=1.14.1,<2.0.0)"
+    "alembic (>=1.14.1,<2.0.0)",
+    "typesense (>=0.21.0,<0.22.0)"
 ]
 
 
