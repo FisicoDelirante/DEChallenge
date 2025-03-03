@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -13,7 +13,7 @@ class Artist(Base):
     __tablename__ = "artists"
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    country = Column(String)
+    location = Column(String)
 
     # Relationship to Songs
     songs = relationship("Song", back_populates="artist")
@@ -24,11 +24,12 @@ class Song(Base):
     __tablename__ = "songs"
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
+    lyrics = Column(String, nullable=True)
+    duration = Column(Float)
     artist_id = Column(Integer, ForeignKey("artists.id"), nullable=False)
     album_id = Column(Integer, ForeignKey("albums.id"), nullable=True)
     genre_id = Column(Integer, ForeignKey("genres.id"), nullable=False)
-    duration = Column(Float)
-    play_count = Column(Integer, default=0)
+    audio_feature_id = Column(Integer, ForeignKey("audio_features.id"), nullable=True)
 
     # # Relationships
     artist = relationship("Artist", back_populates="songs")
@@ -54,3 +55,17 @@ class Album(Base):
 
     # Relationship to Songs
     songs = relationship("Song", back_populates="album")
+
+
+class AudioFeature(Base):
+    __tablename__ = "audio_features"
+    id = Column(Integer, primary_key=True)
+    tempo = Column(Float)
+    key = Column(Integer)
+    loudness = Column(Float)
+    mode = Column(Integer)
+    time_signature = Column(Integer)
+    # You can add additional fields if available, e.g., danceability, energy, etc.
+
+    # Relationship to songs (one-to-many if different songs share similar features)
+    songs = relationship("Song", back_populates="audio_feature")
