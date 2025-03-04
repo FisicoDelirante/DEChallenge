@@ -56,7 +56,7 @@ def upgrade() -> None:
     op.create_table(
         "lyrics",
         sa.Column("title", sa.String(), nullable=False),
-        sa.Column("lyrics", sa.String(), nullable=False),
+        sa.Column("lyrics", sa.String(), nullable=True),
         sa.ForeignKeyConstraint(
             ["title"],
             ["songs.title"],

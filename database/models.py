@@ -17,7 +17,7 @@ class Artist(Base):
 class Lyrics(Base):
     __tablename__ = "lyrics"
     title = Column(String, ForeignKey("songs.title"), primary_key=True)
-    lyrics = Column(String, nullable=False)
+    lyrics = Column(String, nullable=True)
 
 
 class Song(Base):

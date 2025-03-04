@@ -1,12 +1,14 @@
+import requests
 from minio.commonconfig import CopySource
 
 from fastapi import APIRouter, Depends
 from minio import Minio
 import io
 import h5py
+from sqlalchemy import Select
 
 from database.connection import get_session
-from database.models import Album, Artist, AudioFeature, Song
+from database.models import Album, Artist, AudioFeature, Lyrics, Song
 
 __ROUTE_PREFIX__ = "/digestion"
 
@@ -113,19 +115,46 @@ def process_files(session=Depends(get_session)):
         response = minio_client.get_object(source_bucket, f.object_name)
         file_data = io.BytesIO(response.data)
         processed_files.append(h5_to_dict(file_data))
-        # cs = CopySource(source_bucket, f.object_name)
-        # try:
-        #     # Copy the object to the destination bucket
-        #     minio_client.copy_object(destination_bucket, f.object_name, cs)
-        #     print(
-        #         f"Copied {f.object_name} from {source_bucket} to {destination_bucket}."
-        #     )
+        cs = CopySource(source_bucket, f.object_name)
+        try:
+            # Copy the object to the destination bucket
+            minio_client.copy_object(destination_bucket, f.object_name, cs)
+            print(
+                f"Copied {f.object_name} from {source_bucket} to {destination_bucket}."
+            )
 
-        #     # Remove the object from the source bucket
-        #     minio_client.remove_object(source_bucket, f.object_name)
-        #     print(f"Removed {f.object_name} from {source_bucket}.")
+            # Remove the object from the source bucket
+            minio_client.remove_object(source_bucket, f.object_name)
+            print(f"Removed {f.object_name} from {source_bucket}.")
 
-        # except Exception as err:
-        #     print("Error occurred:", err)
+        except Exception as err:
+            print("Error occurred:", err)
 
     add_songs_with_audio_features_bulk(session, processed_files)
+
+
+def get_lyrics_no_api_key(artist, track):
+    # Format the URL: artist and track should be
+    # URL-encoded if they contain special characters.
+    base_url = f"https://api.lyrics.ovh/v1/{artist}/{track}"
+    response = requests.get(base_url)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data.get("lyrics", None)
+    else:
+        return None
+
+
+@router.post("/processLyrics")
+def add_lyrics(session=Depends(get_session)):
+    statement = Select(Song.title, Song.artist_name).where(
+        Song.title.not_in(Select(Lyrics.title))
+    )
+    songs_without_lyrics = session.execute(statement).all()
+    new_lyrics = []
+    for song in songs_without_lyrics:
+        lyrics = get_lyrics_no_api_key(song.artist_name, song.title)
+        new_lyrics.append(Lyrics(title=song.title, lyrics=lyrics))
+    session.add_all(new_lyrics)
+    session.commit()
