@@ -48,7 +48,7 @@ You can now access swagger in localhost:8000/docs
 
 ### Api order
 
-So far the ETL process isn't fully automated, so API calls need to be done in order. In sample files you can find a few files to test the system.
+So far the ETL process isn't fully automated, so API calls need to be done in order. In sample files you can find a few files to test the system. The API credentials are ADMIN ADMIN, and they are defined in the .env file.
 
 First, upload them to **/ingestion/uploadFiles**, then in order run 
 - **/digestion/processFiles**
