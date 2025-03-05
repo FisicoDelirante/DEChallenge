@@ -37,3 +37,11 @@ class TypesenseRepo:
             }
         )
         return response
+
+    def check_if_collection_exists(self, collection: str) -> bool:
+        existing_collections = self.typesense_client.collections.retrieve()
+        collections_names = {c["name"] for c in existing_collections}
+        return collection in collections_names
+
+    def create_schema(self, schema: dict):
+        self.typesense_client.collections.create(schema)

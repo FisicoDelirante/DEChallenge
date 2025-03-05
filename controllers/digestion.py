@@ -7,6 +7,7 @@ import requests
 from repositories.minio import MinioRepo
 from repositories.postgre import GoldRepo, LyricsRepo, SongsRepo
 from repositories.typesense import TypesenseRepo
+from database.typesense_models import songs_schema
 
 
 class DigestionController:
@@ -49,7 +50,8 @@ class DigestionController:
         self._lyrics_repo.add_lyrics(new_lyrics)
 
     def populate_typesense(self):
-
+        if not self._typesense_repo.check_if_collection_exists("songs"):
+            self._typesense_repo.create_schema(songs_schema)
         songs = self._songs_repo.get_songs_with_artist_and_lyrics()
         songs_documents = [
             {
@@ -59,7 +61,7 @@ class DigestionController:
             }
             for song in songs
         ]
-        self._typesense_repo.bul_upload("songs", songs_documents)
+        self._typesense_repo.bulk_upload("songs", songs_documents)
         return
 
     def update_gold_layer(self):

@@ -1,75 +1,100 @@
-from sqlalchemy import Insert, Select
-from database.connection import get_session
-from database.models import Album, Artist, Genre, Song
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import sessionmaker
+
+# Import your models (assuming they are defined in a module named models)
+from models import (
+    Artist,
+    Song,
+    AudioFeature,
+    Album,
+    GoldArtistPerformance,
+    GoldAlbumPerformance,
+)
 
 
-def get_all_songs():
-    g = get_session()
-    session = next(g)
-    statement = Select(Song.album, Song.artist)
-    return session.execute(statement).all()
+# Create engine and session (update the connection string as needed)
+engine = create_engine("postgresql://fer:pwc@localhost:12345/dechallenge")
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
-def add_song(
-    title,
-    artist_name,
-    genre_name,
-    album_name=None,
-    duration=None,
-    play_count=0,
-):
-    g = get_session()
-    session = next(g)
-
-    # Check if the artist already exists
-    artist = session.query(Artist).filter_by(name=artist_name).first()
-
-    if not artist:
-        # Create new artist
-        artist = Artist(name=artist_name)
-        session.add(artist)
-        session.commit()  # Commit to get the artist ID
-
-    # Check if the genre exists
-    genre = session.query(Genre).filter_by(name=genre_name).first()
-    if not genre:
-        genre = Genre(name=genre_name)
-        session.add(genre)
-        session.commit()
-
-    # Check if the album exists (optional)
-    album = None
-    if album_name:
-        album = session.query(Album).filter_by(name=album_name).first()
-        if not album:
-            album = Album(name=album_name)
-            session.add(album)
-            session.commit()
-
-    # Create the song
-    song = Song(
-        title=title,
-        artist_id=artist.id,
-        genre_id=genre.id,
-        album_id=album.id if album else None,
-        duration=duration,
-        play_count=play_count,
+def update_gold_artist_performance(session):
+    """
+    Aggregates artist performance metrics and updates the gold_artist_performance table.
+    """
+    # Query: join Artist, Song, and AudioFeature to compute aggregates
+    artist_data = (
+        session.query(
+            Artist.name.label("artist_name"),
+            func.count(Song.title).label("total_songs"),
+            func.avg(AudioFeature.tempo).label("avg_tempo"),
+            func.avg(AudioFeature.loudness).label("avg_loudness"),
+            func.sum(AudioFeature.duration).label("total_duration"),
+        )
+        .join(Song, Song.artist_name == Artist.name)
+        .join(AudioFeature, AudioFeature.title == Song.title)
+        .group_by(Artist.name)
+        .all()
     )
 
-    # Add to session and commit
-    session.add(song)
-    session.commit()
+    # Optionally clear out existing records
+    session.query(GoldArtistPerformance).delete()
 
-    print(f"Added song: {title} by {artist_name}")
+    # Insert aggregated data into GoldArtistPerformance
+    for row in artist_data:
+        performance = GoldArtistPerformance(
+            artist_name=row.artist_name,
+            total_songs=row.total_songs,
+            avg_tempo=row.avg_tempo,
+            avg_loudness=row.avg_loudness,
+            total_duration=row.total_duration,
+        )
+        session.add(performance)
+    session.commit()
+    print("GoldArtistPerformance updated.")
+
+
+def update_gold_album_performance(session):
+    """
+    Aggregates album performance metrics and updates the gold_album_performance table.
+    """
+    album_data = (
+        session.query(
+            Album.name.label("album_name"),
+            func.count(Song.title).label("total_songs"),
+            func.avg(AudioFeature.duration).label("avg_duration"),
+        )
+        .join(Song, Song.album_name == Album.name)
+        .join(AudioFeature, AudioFeature.title == Song.title)
+        .group_by(Album.name)
+        .all()
+    )
+
+    session.query(GoldAlbumPerformance).delete()
+
+    for row in album_data:
+        performance = GoldAlbumPerformance(
+            album_name=row.album_name,
+            total_songs=row.total_songs,
+            avg_duration=row.avg_duration,
+        )
+        session.add(performance)
+    session.commit()
+    print("GoldAlbumPerformance updated.")
+
+
+# def refresh_gold_song_details(session):
+#     """
+#     Refreshes the materialized view 'gold_song_details'.
+#     This is PostgreSQL specific.
+#     """
+#     session.execute("REFRESH MATERIALIZED VIEW gold_song_details;")
+#     session.commit()
+#     print("Materialized view 'gold_song_details' refreshed.")
 
 
 if __name__ == "__main__":
-    # Example Usage
-    add_song(
-        "Bohemian Rhapsody",
-        "Queen",
-        "Rock",
-        album_name="A Night at the Opera",
-        duration=5.55,
-        play_count=100,
-    )
+    # Run the transformations
+    update_gold_artist_performance(session)
+    update_gold_album_performance(session)
+    # refresh_gold_song_details(session)
