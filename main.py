@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI
 from api.ingestion import router as ingestion_router
-from api.ingestion import router as digestion_router
+from api.digestion import router as digestion_router
 from api.querying import router as query_router
 from security.authentication import authenticate_user
 
