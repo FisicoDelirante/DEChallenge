@@ -10,8 +10,16 @@ router = APIRouter(prefix=__ROUTE_PREFIX__)
 @router.post("/processFile")
 def process_files(digestion_controller=Depends(DigestionController)):
     digestion_controller.process_h5_files_in_bucket()
+    return
 
 
 @router.post("/processLyrics")
 def add_lyrics(digestion_controller=Depends(DigestionController)):
     digestion_controller.add_lyrics()
+    return
+
+
+@router.post("/populateTypesense")
+def populate_typesense(digestion_controller=Depends(DigestionController)):
+    digestion_controller.populate_typesense()
+    return
