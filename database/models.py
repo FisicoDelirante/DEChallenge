@@ -19,6 +19,8 @@ class Lyrics(Base):
     title = Column(String, ForeignKey("songs.title"), primary_key=True)
     lyrics = Column(String, nullable=True)
 
+    song = relationship("Song", back_populates="lyrics")
+
 
 class Song(Base):
     __tablename__ = "songs"
@@ -32,6 +34,7 @@ class Song(Base):
     genre = relationship("Genre", back_populates="songs")
     album = relationship("Album", back_populates="songs")
     audio_feature = relationship("AudioFeature", back_populates="songs")
+    lyrics = relationship("Lyrics", back_populates="song")
 
 
 # Dimension Table: Genres
