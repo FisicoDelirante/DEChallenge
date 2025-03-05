@@ -26,17 +26,15 @@ class DigestionController:
         self._typesense_repo = typesense_repo
 
     def process_h5_files_in_bucket(self):
-        source_bucket = "my-bucket"
+        source_bucket = "raw"
         destination_bucket = "processed"
         processed_songs = []
-        for file in self._minio_repo.list_files():
-            response = self._minio_repo.download_file(source_bucket, file.object_name)
+        for file in self._minio_repo.list_files(source_bucket):
+            response = self._minio_repo.download_file(source_bucket, file)
             file_data = io.BytesIO(response.data)
             processed_songs.append(self._h5_to_dict(file_data))
-            self._minio_repo.move_files(
-                file.object_name, source_bucket, destination_bucket
-            )
-        self.songs_repo.add_songs_with_features(processed_songs)
+            self._minio_repo.move_files(file, source_bucket, destination_bucket)
+        self._songs_repo.add_songs_with_features(processed_songs)
 
     def add_lyrics(self):
         songs_without_lyrics = self._songs_repo.get_songs_without_lyrics()
@@ -68,7 +66,7 @@ class DigestionController:
         self._gold_repo.update_gold_artist_performance()
         self._gold_repo.update_gold_album_performance()
 
-    def _h5_to_dict(file) -> dict:
+    def _h5_to_dict(self, file) -> dict:
         with h5py.File(file, "r") as f:
             return {
                 "title": f["metadata"]["songs"]["title"][0].decode("utf-8"),
@@ -85,7 +83,7 @@ class DigestionController:
                 "time_signature": float(f["analysis"]["songs"]["time_signature"][0]),
             }
 
-    def _request_lyrics(artist: str, track: str) -> Optional[str]:
+    def _request_lyrics(self, artist: str, track: str) -> Optional[str]:
         base_url = f"https://api.lyrics.ovh/v1/{artist}/{track}"
         response = requests.get(base_url)
 
