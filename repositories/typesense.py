@@ -27,3 +27,13 @@ class TypesenseRepo:
         self.typesense_client.collections[collection].documents.import_(
             documents, {"action": "upsert"}
         )
+
+    def semantic_search(self, collection: str, query: str):
+        response = self.typesense_client.collections[collection].documents.search(
+            {
+                "q": query,
+                "query_by": "embedding",
+                "exclude_fields": "embedding",
+            }
+        )
+        return response

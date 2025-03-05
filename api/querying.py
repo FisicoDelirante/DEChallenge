@@ -1,18 +1,10 @@
-from fastapi import APIRouter
-import typesense
+from fastapi import APIRouter, Depends
+
+from controllers.querying import QueryController
 
 __ROUTE_PREFIX__ = "/query"
 
 router = APIRouter(prefix=__ROUTE_PREFIX__)
-
-
-client = typesense.Client(
-    {
-        "nodes": [{"host": "localhost", "port": "8108", "protocol": "http"}],
-        "api_key": "xyz",
-        "connection_timeout_seconds": 2,
-    }
-)
 
 
 @router.get("/getSongInfo")
@@ -26,12 +18,5 @@ def whatever():
 
 
 @router.get("/getSongByTheme")
-def get_songs_by_theme(term: str):
-    response = client.collections["songs"].documents.search(
-        {
-            "q": term,
-            "query_by": "embedding",
-            "exclude_fields": "embedding",
-        }
-    )
-    return response
+def get_songs_by_theme(term: str, query_controller=Depends(QueryController)):
+    return query_controller.semantic_search(term)
