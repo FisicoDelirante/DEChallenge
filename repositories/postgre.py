@@ -1,5 +1,5 @@
-from tkinter.tix import Select
 from fastapi import Depends
+from sqlalchemy import Select
 from database.connection import get_session
 from database.models import Album, Artist, AudioFeature, Lyrics, Song
 
@@ -80,6 +80,14 @@ class SongsRepo:
         self._session.add_all(new_features)
         self._session.commit()
         print(f"Successfully added {len(new_songs)} songs.")
+
+    def get_songs_with_artist_and_lyrics(self):
+        return (
+            self._session.query(Song.artist_name, Song.title, Lyrics.lyrics)
+            .join(Lyrics, Song.title == Lyrics.title)
+            .filter(Lyrics.lyrics != None)  # noqa
+            .all()
+        )
 
 
 class LyricsRepo:
