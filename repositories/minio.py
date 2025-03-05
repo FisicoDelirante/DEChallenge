@@ -28,7 +28,7 @@ class MinioRepo:
     def download_file(self, bucket: str, filename: str) -> HTTPResponse:
         return self.minio_client.get_object(bucket, filename)
 
-    def move_files(
+    def move_file(
         self, filename: str, source_bucket: str, destination_bucket: str
     ) -> None:
         cs = CopySource(source_bucket, filename)
@@ -36,5 +36,9 @@ class MinioRepo:
         self.minio_client.copy_object(destination_bucket, filename, cs)
 
         # Remove the object from the source bucket
-        self.minio_client.remove_object(source_bucket, filename)
+        self.remove_object(source_bucket, filename)
+        return
+
+    def remove_object(self, bucket: str, filename: str):
+        self.minio_client.remove_object(bucket, filename)
         return
