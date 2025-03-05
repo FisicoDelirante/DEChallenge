@@ -24,13 +24,23 @@ services:
   minio:
     image: minio/minio
     container_name: minio
-    restart: always
+    command: server /data --console-address ":9001"
     ports:
-      - "9000:9000" # API Port
-      - "9001:9001" # Web UI Port
+      - "9000:9000"
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password
     volumes:
       - ./minio-data:/data
-    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "mc", "alias", "set", "myminio", "http://minio:9000", "admin", "password" ]
+      interval: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c " sleep 5; mc alias set myminio http://minio:9000 admin password; (mc ls myminio/raw || mc mb myminio/raw); (mc ls myminio/processed || mc mb myminio/processed); exit 0; "
