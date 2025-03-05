@@ -1,7 +1,15 @@
 from fastapi import Depends
-from sqlalchemy import Select
+from sqlalchemy import Select, func
 from database.connection import get_session
-from database.models import Album, Artist, AudioFeature, Lyrics, Song
+from database.models import (
+    Album,
+    Artist,
+    AudioFeature,
+    GoldAlbumPerformance,
+    GoldArtistPerformance,
+    Lyrics,
+    Song,
+)
 
 
 class SongsRepo:
@@ -113,3 +121,73 @@ class AlbumsRepo:
 
     def get_all_albums(self):
         return self._session.query(Album).all()
+
+
+class GoldRepo:
+    def __init__(self, session=Depends(get_session)):
+        self._session = session
+
+    def update_gold_artist_performance(self):
+        """
+        Aggregates artist performance metrics and updates
+        the gold_artist_performance table.
+        """
+        # Query: join Artist, Song, and AudioFeature to compute aggregates
+        artist_data = (
+            self._session.query(
+                Artist.name.label("artist_name"),
+                func.count(Song.title).label("total_songs"),
+                func.avg(AudioFeature.tempo).label("avg_tempo"),
+                func.avg(AudioFeature.loudness).label("avg_loudness"),
+                func.sum(AudioFeature.duration).label("total_duration"),
+            )
+            .join(Song, Song.artist_name == Artist.name)
+            .join(AudioFeature, AudioFeature.title == Song.title)
+            .group_by(Artist.name)
+            .all()
+        )
+
+        # Optionally clear out existing records
+        self._session.query(GoldArtistPerformance).delete()
+
+        # Insert aggregated data into GoldArtistPerformance
+        for row in artist_data:
+            performance = GoldArtistPerformance(
+                artist_name=row.artist_name,
+                total_songs=row.total_songs,
+                avg_tempo=row.avg_tempo,
+                avg_loudness=row.avg_loudness,
+                total_duration=row.total_duration,
+            )
+            self._session.add(performance)
+        self._session.commit()
+        print("GoldArtistPerformance updated.")
+
+    def update_gold_album_performance(self):
+        """
+        Aggregates album performance metrics and updates the
+        gold_album_performance table.
+        """
+        album_data = (
+            self._session.query(
+                Album.name.label("album_name"),
+                func.count(Song.title).label("total_songs"),
+                func.avg(AudioFeature.duration).label("avg_duration"),
+            )
+            .join(Song, Song.album_name == Album.name)
+            .join(AudioFeature, AudioFeature.title == Song.title)
+            .group_by(Album.name)
+            .all()
+        )
+
+        self._session.query(GoldAlbumPerformance).delete()
+
+        for row in album_data:
+            performance = GoldAlbumPerformance(
+                album_name=row.album_name,
+                total_songs=row.total_songs,
+                avg_duration=row.avg_duration,
+            )
+            self._session.add(performance)
+        self._session.commit()
+        print("GoldAlbumPerformance updated.")

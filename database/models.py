@@ -66,3 +66,39 @@ class AudioFeature(Base):
     duration = Column(Float)
 
     songs = relationship("Song", back_populates="audio_feature")
+
+
+# Aggregated table for artist performance metrics
+class GoldArtistPerformance(Base):
+    __tablename__ = "gold_artist_performance"
+    artist_name = Column(String, primary_key=True)
+    total_songs = Column(Integer)
+    avg_tempo = Column(Float)
+    avg_loudness = Column(Float)
+    total_duration = Column(Float)
+
+
+# Aggregated table for album performance metrics
+class GoldAlbumPerformance(Base):
+    __tablename__ = "gold_album_performance"
+    album_name = Column(String, primary_key=True)
+    total_songs = Column(Integer)
+    avg_duration = Column(Float)
+
+
+# Mapping for a materialized view that denormalizes song details.
+# This view must be created in the database separately.
+class GoldSongDetails(Base):
+    __tablename__ = "gold_song_details"
+    # This model is read-only and maps to a materialized view.
+    title = Column(String, primary_key=True)
+    artist_name = Column(String)
+    artist_location = Column(String)
+    album_name = Column(String)
+    tempo = Column(Float)
+    key = Column(Integer)
+    loudness = Column(Float)
+    mode = Column(Integer)
+    time_signature = Column(Integer)
+    duration = Column(Float)
+    lyrics = Column(String)

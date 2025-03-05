@@ -23,3 +23,9 @@ def add_lyrics(digestion_controller=Depends(DigestionController)):
 def populate_typesense(digestion_controller=Depends(DigestionController)):
     digestion_controller.populate_typesense()
     return
+
+
+@router.post("/updateGoldLayer")
+def update_gold_layer(digestion_controller=Depends(DigestionController)):
+    digestion_controller.update_gold_layer()
+    return

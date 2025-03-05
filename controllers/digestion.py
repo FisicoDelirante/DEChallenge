@@ -5,7 +5,7 @@ import h5py
 import requests
 
 from repositories.minio import MinioRepo
-from repositories.postgre import LyricsRepo, SongsRepo
+from repositories.postgre import GoldRepo, LyricsRepo, SongsRepo
 from repositories.typesense import TypesenseRepo
 
 
@@ -16,10 +16,12 @@ class DigestionController:
         songs_repo=Depends(SongsRepo),
         lyrics_repo=Depends(LyricsRepo),
         typesense_repo=Depends(TypesenseRepo),
+        gold_repo=Depends(GoldRepo),
     ):
         self._minio_repo = minio_repo
         self._songs_repo = songs_repo
         self._lyrics_repo = lyrics_repo
+        self._gold_repo = gold_repo
         self._typesense_repo = typesense_repo
 
     def process_h5_files_in_bucket(self):
@@ -59,6 +61,10 @@ class DigestionController:
         ]
         self._typesense_repo.bul_upload("songs", songs_documents)
         return
+
+    def update_gold_layer(self):
+        self._gold_repo.update_gold_artist_performance()
+        self._gold_repo.update_gold_album_performance()
 
     def _h5_to_dict(file) -> dict:
         with h5py.File(file, "r") as f:
