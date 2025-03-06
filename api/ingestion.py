@@ -1,5 +1,6 @@
-from fastapi import APIRouter, UploadFile, Depends, Response
+from fastapi import APIRouter, UploadFile, Depends, Response, status
 
+from api.response_models.ingestion import DeleteResponse, ListResponse, UploadResponse
 from constants import DataLakeConstants
 from repositories.minio import MinioRepo
 
@@ -8,10 +9,15 @@ __ROUTE_PREFIX__ = "/ingestion"
 router = APIRouter(prefix=__ROUTE_PREFIX__, tags=["Raw files management"])
 
 
-@router.post("/uploadFiles")
+@router.post(
+    "/uploadFiles", response_model=UploadResponse, status_code=status.HTTP_201_CREATED
+)
 def upload_multiple_files(
-    files: list[UploadFile], replace: bool = True, minio_repo=Depends(MinioRepo)
-):
+    response: Response,
+    files: list[UploadFile],
+    replace: bool = True,
+    minio_repo=Depends(MinioRepo),
+) -> UploadResponse:
     """Upload files. Since it can be controlled if a file will be replaced or not,
     this endpoint can also be used for update operations,"""
     if not replace:
@@ -21,16 +27,18 @@ def upload_multiple_files(
 
     for file in files:
         minio_repo.add_file(file, DataLakeConstants.RAW_BUCKET)
-
-    return {"filenames": [file.filename for file in files]}
+    return UploadResponse(
+        filesUploaded=[file.filename for file in files],
+    )
 
 
 @router.get("/listFiles")
 def list_files(
     bucket: str = DataLakeConstants.RAW_BUCKET, minio_repo=Depends(MinioRepo)
-):
+) -> ListResponse:
     """List all files in a given bucket."""
-    return minio_repo.list_files(bucket)
+    files = minio_repo.list_files(bucket)
+    return ListResponse(files=files)
 
 
 @router.get("/downloadFiles")
@@ -49,6 +57,7 @@ def remove_files(
     filenames: list[str],
     bucket: str = DataLakeConstants.RAW_BUCKET,
     minio_repo=Depends(MinioRepo),
-):
+) -> DeleteResponse:
     for filename in filenames:
         minio_repo.remove_object(bucket, filename)
+    return DeleteResponse(filesDeleted=filenames)
