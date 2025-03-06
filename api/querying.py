@@ -4,7 +4,7 @@ from controllers.querying import QueryController
 
 __ROUTE_PREFIX__ = "/query"
 
-router = APIRouter(prefix=__ROUTE_PREFIX__)
+router = APIRouter(prefix=__ROUTE_PREFIX__, tags=["Queries"])
 
 
 @router.get("/getSongInfo")

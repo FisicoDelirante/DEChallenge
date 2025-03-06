@@ -5,13 +5,15 @@ from repositories.minio import MinioRepo
 
 __ROUTE_PREFIX__ = "/ingestion"
 
-router = APIRouter(prefix=__ROUTE_PREFIX__)
+router = APIRouter(prefix=__ROUTE_PREFIX__, tags=["Raw files management"])
 
 
 @router.post("/uploadFiles")
-def upload_multiple_h5_file(
+def upload_multiple_files(
     files: list[UploadFile], replace: bool = True, minio_repo=Depends(MinioRepo)
 ):
+    """Upload files. Since it can be controlled if a file will be replaced or not,
+    this endpoint can also be used for update operations,"""
     if not replace:
         existing_files = set(minio_repo.list_files(DataLakeConstants.RAW_BUCKET))
 
@@ -27,6 +29,7 @@ def upload_multiple_h5_file(
 def list_files(
     bucket: str = DataLakeConstants.RAW_BUCKET, minio_repo=Depends(MinioRepo)
 ):
+    """List all files in a given bucket."""
     return minio_repo.list_files(bucket)
 
 
