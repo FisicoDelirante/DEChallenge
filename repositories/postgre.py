@@ -97,6 +97,29 @@ class SongsRepo:
             .all()
         )
 
+    def get_song_with_info(self, song: str):
+        return (
+            self._session.query(
+                Song.title,
+                Song.artist_name,
+                Song.album_name,
+                Lyrics.lyrics,
+                AudioFeature.duration,
+                AudioFeature.key,
+                AudioFeature.loudness,
+                AudioFeature.mode,
+                AudioFeature.tempo,
+                AudioFeature.time_signature,
+            )
+            .join(Lyrics, Song.title == Lyrics.title)
+            .join(AudioFeature, Song.title == AudioFeature.title)
+            .filter(Song.title == song)  # noqa
+            .one()
+        )
+
+    def get_all_songs(self):
+        return self._session.query(Song).all()
+
 
 class LyricsRepo:
     def __init__(self, session=Depends(get_session)):
@@ -161,7 +184,6 @@ class GoldRepo:
             )
             self._session.add(performance)
         self._session.commit()
-        print("GoldArtistPerformance updated.")
 
     def update_gold_album_performance(self):
         """
@@ -190,4 +212,9 @@ class GoldRepo:
             )
             self._session.add(performance)
         self._session.commit()
-        print("GoldAlbumPerformance updated.")
+
+    def get_album_performance(self, album: str):
+        statement = Select(GoldAlbumPerformance).where(
+            GoldAlbumPerformance.album_name == album
+        )
+        return self._session.execute(statement).one()
