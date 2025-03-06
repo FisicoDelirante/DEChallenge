@@ -33,7 +33,7 @@ class DigestionController:
             response = self._minio_repo.download_file(source_bucket, file)
             file_data = io.BytesIO(response.data)
             processed_songs.append(self._h5_to_dict(file_data))
-            self._minio_repo.move_files(file, source_bucket, destination_bucket)
+            self._minio_repo.move_file(file, source_bucket, destination_bucket)
         self._songs_repo.add_songs_with_features(processed_songs)
 
     def add_lyrics(self):
