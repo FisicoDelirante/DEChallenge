@@ -1,16 +1,8 @@
 from http.client import HTTPResponse
 from fastapi import Depends, UploadFile
-from minio import Minio
 from minio.commonconfig import CopySource
 
-
-def get_minio_client():
-    return Minio(
-        "localhost:9000",  # MinIO address
-        access_key="admin",
-        secret_key="password",
-        secure=False,  # Set to True if using HTTPS
-    )
+from database.connection import get_minio_client
 
 
 class MinioRepo:
