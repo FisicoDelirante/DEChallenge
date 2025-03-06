@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: pwc
       POSTGRES_DB: dechallenge
     ports:
-      - "12345:5432"
+      - "5432:5432"
 
   typesense:
     image: typesense/typesense:28.0
