@@ -19,8 +19,20 @@ class QueryController:
         self._artists_repo = artists_repo
         self._gold_repo = gold_repo
 
-    def semantic_search(self, query: str):
-        return self._typesense_repo.semantic_search("songs", query)
+    def semantic_search(self, query: str, results_number: int = 10) -> list[dict]:
+        songs = []
+        for results_page in self._typesense_repo.semantic_search(
+            "songs", query, results_number
+        ):
+            for hit in results_page["hits"]:
+                songs.append(
+                    {
+                        "title": hit["document"]["title"],
+                        "lyrics": hit["document"]["lyrics"],
+                        "artist": hit["document"]["artist"],
+                    }
+                )
+        return songs
 
     def get_album_information(self, album: str):
         return self._gold_repo.get_album_performance(album)[0]

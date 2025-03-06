@@ -36,8 +36,10 @@ def get_album_information(album: str, query_controller=Depends(QueryController))
 
 
 @router.get("/getSongByTheme")
-def get_songs_by_theme(term: str, query_controller=Depends(QueryController)):
-    return query_controller.semantic_search(term)
+def get_songs_by_theme(
+    term: str, results_number: int, query_controller=Depends(QueryController)
+):
+    return query_controller.semantic_search(term, results_number)
 
 
 @router.get("/getSongInfo")
