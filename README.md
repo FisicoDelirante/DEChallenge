@@ -1,7 +1,17 @@
 # DEChallenge
 
 ## Setting up the project
-### Python
+### Just to run it
+Only docker is needed and you need just two commands:
+`docker-compose up -d`
+
+and once all containers are running, run
+
+`docker exec fastapi_app alembic upgrade head`
+
+to get the needed schema into de DB. That's all
+
+### To develop
 Create a virtual environment running
  
  `python -m venv .venv`
@@ -20,7 +30,9 @@ and
 
 This should let you have all python dependencies installed.
 
-### Docker
+### 
+You'll need to modify the .env file, change all containers names (postgres_dev, minio and typesense) for localhost, and do the same in alembic.ini file too.
+
 Ensure you have docker and docker-compose installed.
 
 Run
@@ -33,18 +45,19 @@ Once all containers are running, you need to run
 
 and everything should be ready to go.
 
-
 ## Running the project
 
 Again, make sure all containers are running with
 
 `docker-compose up -d`
 
-and you may start the app with
+You can now access swagger in localhost:8000/docs
+
+If you are planning to run the app outside docker, then:
 
 `fastapi dev .\main.py`
 
-You can now access swagger in localhost:8000/docs
+will also let you run everything
 
 ### Api order
 

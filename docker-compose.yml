@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   postgres:
     build:
@@ -44,3 +43,17 @@ services:
       - minio
     entrypoint: >
       /bin/sh -c " sleep 5; mc alias set myminio http://minio:9000 admin password; (mc ls myminio/raw || mc mb myminio/raw); (mc ls myminio/processed || mc mb myminio/processed); exit 0; "
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.python # Specify the Dockerfile name here
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app # Mount the project directory for live code reloading in 
+      - type: tmpfs
+        target: /app/.venv # Override any host .venv folder with an in-memory empty volume
+    environment:
+      - PYTHONUNBUFFERED=1

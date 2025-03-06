@@ -1,0 +1,28 @@
+# Use Python 3.12.9 slim image
+FROM python:3.12.9-slim
+
+# Install system dependencies needed for Poetry and building packages
+RUN apt-get update && apt-get install -y curl build-essential && apt-get clean
+
+# Install Poetry using the official installer
+RUN curl -sSL https://install.python-poetry.org | python3 -
+ENV PATH="/root/.local/bin:$PATH"
+
+# Set the working directory
+WORKDIR /app
+
+# Copy Poetry configuration files first to leverage Docker cache
+COPY pyproject.toml poetry.lock ./
+
+# Configure Poetry to install dependencies into the system environment (no virtualenv)
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-interaction --no-ansi
+
+# Copy the rest of your application code
+COPY . .
+
+# Expose port 8000 for the FastAPI app
+EXPOSE 8000
+
+# Run the FastAPI app with Uvicorn in development mode with live reloading
+CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

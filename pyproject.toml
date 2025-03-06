@@ -9,17 +9,20 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard] (>=0.115.10,<0.116.0)",
-    "psycopg2 (>=2.9.10,<3.0.0)",
     "sqlalchemy (>=2.0.38,<3.0.0)",
     "alembic (>=1.14.1,<2.0.0)",
     "typesense (>=0.21.0,<0.22.0)",
     "minio (>=7.2.15,<8.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
     "python-decouple (>=3.8,<4.0)",
-    "h5py (>=3.13.0,<4.0.0)"
+    "h5py (>=3.13.0,<4.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
