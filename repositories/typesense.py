@@ -6,14 +6,24 @@ from database.connection import get_typesense_client
 
 class TypesenseRepo:
     RESULTS_PER_PAGE = 50
+    UPLOAD_BATCH_SIZE = 100
 
     def __init__(self, typesense_client=Depends(get_typesense_client)):
         self.typesense_client = typesense_client
 
     def bulk_upload(self, collection: str, documents: list[dict]):
-        self.typesense_client.collections[collection].documents.import_(
-            documents, {"action": "upsert"}
-        )
+        batches = len(documents) // self.UPLOAD_BATCH_SIZE
+        if len(documents) % self.UPLOAD_BATCH_SIZE != 0:
+            batches += 1
+        for i in range(batches):
+            self.typesense_client.collections[collection].documents.import_(
+                documents[
+                    i
+                    * self.UPLOAD_BATCH_SIZE : (i + 1)  # noqa
+                    * self.UPLOAD_BATCH_SIZE
+                ],
+                {"action": "upsert"},
+            )
 
     def semantic_search(
         self, collection: str, query: str, results_number: int = 10
