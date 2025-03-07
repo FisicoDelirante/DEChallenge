@@ -70,3 +70,48 @@ First, upload them to **/ingestion/uploadFiles**, then in order run
 - **/digestion/updateGoldLayer**
 
 The query API now should be ready to use.
+
+# Mermaid diagram
+
+## Overall Data Lake Organization
+
+```mermaid
+graph TD;
+    A[Data Sources] -->|Raw Files| B[MinIO - Data Lake];
+    B -->|Raw Data Storage| D["Bronze Layer - MinIO (raw & processed buckets)"];
+    D -->|Data Loading| E[Silver Layer - PostgreSQL];
+    E -->|Aggregation & Indexing| F[Gold Layer - PostgreSQL & TypeSense];
+    F -->|Query API| H[FastAPI];
+```
+
+---
+
+## Bronze Layer (Raw Data)
+
+```mermaid
+graph TD;
+    A[MinIO - Raw Bucket] -->|Stores Unstructured & Structured Data| B[Raw Data];
+    B -->|Processing| C[MinIO - Processed Bucket];
+```
+
+---
+
+## Silver Layer (Refined Data - Star Schema)
+
+```mermaid
+graph TD;
+    A[PostgreSQL - Silver Layer] -->|Structured Storage| B[Normalized Tables];
+    B -->|Schema-based Queries| C[Relational Data Model];
+```
+
+---
+
+## Gold Layer (Aggregated Data)
+
+```mermaid
+graph TD;
+    A[Silver Layer - PostgreSQL] --> |Aggregations & Transformations| B[Gold Layer - PostgreSQL];
+    A -->|Vector Embeddings| C[TypeSense - Vector DB];
+    B -->|Expose Data| D[FastAPI];
+    C -->|Expose Data| D[FastAPI];
+```
