@@ -13,7 +13,6 @@ router = APIRouter(prefix=__ROUTE_PREFIX__, tags=["Raw files management"])
     "/uploadFiles", response_model=UploadResponse, status_code=status.HTTP_201_CREATED
 )
 def upload_multiple_files(
-    response: Response,
     files: list[UploadFile],
     replace: bool = True,
     minio_repo=Depends(MinioRepo),
