@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 
 from controllers.querying import QueryController
 
@@ -28,6 +28,8 @@ def list_all_albums(query_controller=Depends(QueryController)):
 @router.get("/getAlbumStats")
 def get_album_information(album: str, query_controller=Depends(QueryController)):
     result = query_controller.get_album_information(album)
+    if result is None:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
     return {
         "albumName": result.album_name,
         "averageDuration": result.avg_duration,
@@ -45,6 +47,8 @@ def get_songs_by_theme(
 @router.get("/getSongInfo")
 def get_song_information(song: str, query_controller=Depends(QueryController)):
     result = query_controller.get_song_information(song)
+    if result is None:
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
     return {
         "title": result.title,
         "artist_name": result.artist_name,

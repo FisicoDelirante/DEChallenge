@@ -1,6 +1,7 @@
 from fastapi import Depends
 from repositories.postgre import AlbumsRepo, ArtistsRepo, GoldRepo, SongsRepo
 from repositories.typesense import TypesenseRepo
+from sqlalchemy.exc import NoResultFound
 
 
 class QueryController:
@@ -35,10 +36,16 @@ class QueryController:
         return songs
 
     def get_album_information(self, album: str):
-        return self._gold_repo.get_album_performance(album)[0]
+        try:
+            return self._gold_repo.get_album_performance(album)[0]
+        except NoResultFound:
+            return None
 
     def get_song_information(self, album: str):
-        return self._songs_repo.get_song_with_info(album)
+        try:
+            return self._songs_repo.get_song_with_info(album)
+        except NoResultFound:
+            return None
 
     def get_all_songs(self):
         return [song.title for song in self._songs_repo.get_all_songs()]
