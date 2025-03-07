@@ -10,6 +10,7 @@ from database.models import (
     Lyrics,
     Song,
 )
+import re
 
 
 class SongsRepo:
@@ -24,9 +25,7 @@ class SongsRepo:
         )
         return self._session.execute(statement).all()
 
-    def add_songs_with_features(self, songs: list[dict]):
-        # So far I'm assuming a song will be uploaded only once.
-        # I should fix it, but first I need to get everything running.
+    def add_songs_with_features(self, songs: list[dict], lyrics_included: bool = False):
         # Extract unique artists and albums from the list
         artist_names = {song["artist"] for song in songs}
         album_names = {song["album"] for song in songs if song.get("album")}
@@ -35,10 +34,14 @@ class SongsRepo:
         # Query existing artists and albums
         existing_artists = self._session.query(Artist).all()
         existing_albums = self._session.query(Album).all()
+        existing_songs = self._session.query(Song).all()
 
         # Keep only new artists and new albums
         new_artists = artist_names - {artist.name for artist in existing_artists}
         new_albums = album_names - {album.name for album in existing_albums}
+        new_songs = self._remove_duplicate_songs(
+            songs, {song.title for song in existing_songs}
+        )
 
         # Insert missing artists
         new_artists_db = []
@@ -59,9 +62,11 @@ class SongsRepo:
             self._session.add_all(new_albums_db)
 
         # Prepare Song and AudioFeature records for each song in the list
-        new_songs = []
-        new_features = []
-        for song in songs:
+        songs_to_add = []
+        features_to_add = []
+        lyrics_to_add = []
+
+        for song in new_songs:
 
             # Create a new AudioFeature record (one per song)
             audio_feature = AudioFeature(
@@ -73,7 +78,7 @@ class SongsRepo:
                 time_signature=song["time_signature"],
                 duration=song["duration"],
             )
-            new_features.append(audio_feature)
+            features_to_add.append(audio_feature)
 
             # Create the Song record with foreign key references
             new_song = Song(
@@ -81,13 +86,25 @@ class SongsRepo:
                 artist_name=song["artist"],
                 album_name=song["album"],
             )
-            new_songs.append(new_song)
+            songs_to_add.append(new_song)
+            if lyrics_included:
+                new_lyrics = Lyrics(
+                    title=song["title"],
+                    lyrics=(
+                        re.sub("\x00", "", song["lyrics"])
+                        if song["lyrics"] is not None
+                        else None
+                    ),
+                )
+                lyrics_to_add.append(new_lyrics)
 
-        # 7. Bulk insert all Song records and commit once
-        self._session.add_all(new_songs)
-        self._session.add_all(new_features)
+        self._session.add_all(songs_to_add)
+        self._session.add_all(features_to_add)
+        if len(lyrics_to_add) != 0:
+            self._session.add_all(lyrics_to_add)
+
         self._session.commit()
-        print(f"Successfully added {len(new_songs)} songs.")
+        print(f"Successfully added {len(songs_to_add)} songs.")
 
     def get_songs_with_artist_and_lyrics(self):
         return (
@@ -120,13 +137,37 @@ class SongsRepo:
     def get_all_songs(self):
         return self._session.query(Song).all()
 
+    def _remove_duplicate_songs(
+        self, songs: list[dict], existing_songs: set[str]
+    ) -> list[dict]:
+        unique_data = []
+
+        for song in songs:
+            if song["title"] not in existing_songs:
+                existing_songs.add(song["title"])
+                unique_data.append(song)
+
+        return unique_data
+
 
 class LyricsRepo:
     def __init__(self, session=Depends(get_session)):
         self._session = session
 
     def add_lyrics(self, lyrics: list[dict]) -> None:
-        self._session.add_all([Lyrics(**lyrics_dict) for lyrics_dict in lyrics])
+        self._session.add_all(
+            [
+                Lyrics(
+                    title=lyrics_dict["title"],
+                    lyrics=(
+                        re.sub("\x00", "", lyrics_dict["lyrics"])
+                        if lyrics_dict["lyrics"] is not None
+                        else None
+                    ),
+                )
+                for lyrics_dict in lyrics
+            ]
+        )
         self._session.commit()
 
 

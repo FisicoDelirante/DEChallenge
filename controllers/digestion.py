@@ -3,7 +3,9 @@ from typing import Optional
 from fastapi import Depends
 import h5py
 import requests
+import json
 
+from constants import DataLakeConstants
 from repositories.minio import MinioRepo
 from repositories.postgre import GoldRepo, LyricsRepo, SongsRepo
 from repositories.typesense import TypesenseRepo
@@ -26,15 +28,40 @@ class DigestionController:
         self._typesense_repo = typesense_repo
 
     def process_h5_files_in_bucket(self):
-        source_bucket = "raw"
-        destination_bucket = "processed"
         processed_songs = []
-        for file in self._minio_repo.list_files(source_bucket):
-            response = self._minio_repo.download_file(source_bucket, file)
+        h5_files = [
+            file
+            for file in self._minio_repo.list_files(DataLakeConstants.RAW_BUCKET)
+            if file[-3:] == ".h5"
+        ]
+        for file in h5_files:
+            response = self._minio_repo.download_file(
+                DataLakeConstants.RAW_BUCKET, file
+            )
             file_data = io.BytesIO(response.data)
             processed_songs.append(self._h5_to_dict(file_data))
-            self._minio_repo.move_file(file, source_bucket, destination_bucket)
+            self._minio_repo.move_file(
+                file, DataLakeConstants.RAW_BUCKET, DataLakeConstants.PROCESSED_BUCKET
+            )
         self._songs_repo.add_songs_with_features(processed_songs)
+
+    def process_json_files_in_bucket(self):
+        processed_songs = []
+        json_files = [
+            file
+            for file in self._minio_repo.list_files(DataLakeConstants.RAW_BUCKET)
+            if file[-5:] == ".json"
+        ]
+        for file in json_files:
+            response = self._minio_repo.download_file(
+                DataLakeConstants.RAW_BUCKET, file
+            )
+            file_data = io.BytesIO(response.data)
+            processed_songs.extend(json.load(file_data))
+            self._minio_repo.move_file(
+                file, DataLakeConstants.RAW_BUCKET, DataLakeConstants.PROCESSED_BUCKET
+            )
+        self._songs_repo.add_songs_with_features(processed_songs, lyrics_included=True)
 
     def add_lyrics(self):
         songs_without_lyrics = self._songs_repo.get_songs_without_lyrics()

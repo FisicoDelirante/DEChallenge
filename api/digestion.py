@@ -12,6 +12,7 @@ def process_files(digestion_controller=Depends(DigestionController)):
     """Trigger processing of unprocessed raw files. Once done,
     files will be moved to a bucket called processed."""
     digestion_controller.process_h5_files_in_bucket()
+    digestion_controller.process_json_files_in_bucket()
     return
 
 
